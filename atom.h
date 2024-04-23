@@ -1,11 +1,7 @@
 #pragma once
 
-#include<string>
-#include<vector>
-#include<set>
+#include"base.h"
 #include<iostream>
-#include<Eigen/Sparse>
-using namespace std;
 
 const int Element_num = 64;
 const int Number_num = 6;
@@ -19,10 +15,9 @@ const string Atom_list[Element_num] = {"[NOP]",
 	"Sb",	"Te",	"I",	"Xe",	"Cs",	"Ba"
 };
 
-typedef Eigen::SparseMatrix<int> Formula;					// All matters are stored using vectors
-typedef Eigen::SparseMatrix<int>::InnerIterator FormulaIter;
+typedef __base Formula;					// All matters are stored using vectors
 typedef vector<Formula> EvalFormula;
-typedef int Card;
+typedef uc Card;
 
 enum class CardType {
 	Element, Number, Others
@@ -38,45 +33,28 @@ inline CardType getCardType(int cardId) {
 	return CardType::Others;
 }
 
-void printSparse(Formula& f) {
-	auto mat = f.toDense();
-	int* p = mat.data();
-	int* pend = p + Element_num;
-	int cnt = 0;
-	for (; p < pend; p++) {
-		cout << *p << ", "; cnt++;
-		if (cnt == 16) {
-			cnt = 0; cout << endl;
-		}
-	}
-}
-
 inline Formula zero() {
-	Formula m(Element_num, 1); return m;	// note that the storage is column first
+	return Formula();
 }
-inline Formula atom(int id) {
-	Formula m(Element_num, 1); m.insert(id, 0) = 1; return m;
+inline Formula atom(uc id) {
+	return Formula(id, 1);
 }
 inline Formula eval(EvalFormula& evf) {
-	Formula res = zero();
-	for (auto& m : evf) {
-		res += m;
-	}
-	return res;
+	Formula z = zero();
+	z.sum(evf);
+	return z;
 }
 inline Formula eval(EvalFormula& evf, int mul) {
-	Formula res = zero();
-	for (auto& m : evf) {
-		res += m;
-	}
-	return res * mul;
+	Formula z = zero();
+	z.sum(evf); z *= mul;
+	return z;
 }
 
 inline string to_string(Formula& f) {
 	string s = "";
-	for (FormulaIter it(f, 0); it; ++it) {
-		int i = it.index();
-		s += "(" + Atom_list[i] + "," + to_string(it.value()) + ")";
+	int m = f.size();
+	for (int i = 0; i < m; i++) {
+		s += "(" + Atom_list[f.elem[i]] + "," + to_string(f.nums[i]) + ")";
 	}
 	return s;
 }
@@ -122,8 +100,8 @@ inline vector<EvalFormula> fullCombine(EvalFormula& src, int mul) {
 	return res;
 }
 
-inline void splitCardsByType(vector<int>& cardIds, 
-	vector<int>& element_cards, vector<int>& number_cards, vector<int>& other_cards) {
+inline void splitCardsByType(vector<uc>& cardIds, 
+	vector<uc>& element_cards, vector<uc>& number_cards, vector<uc>& other_cards) {
 	for (auto& id : cardIds) {
 		switch (getCardType(id)) {
 		case CardType::Element:element_cards.push_back(id); break;
@@ -133,10 +111,10 @@ inline void splitCardsByType(vector<int>& cardIds,
 	}
 }
 
-vector<Formula> geoAllPossibleFormulas(vector<int>& cardIds) {
-	vector<int> element_cards;
-	vector<int> number_cards;
-	vector<int> other_cards;
+vector<Formula> geoAllPossibleFormulas(vector<uc>& cardIds) {
+	vector<uc> element_cards;
+	vector<uc> number_cards;
+	vector<uc> other_cards;
 	splitCardsByType(cardIds, element_cards, number_cards, other_cards);
 	EvalFormula fs; fs.reserve(element_cards.size());
 	for (auto& id : element_cards) {
@@ -161,27 +139,42 @@ vector<Formula> geoAllPossibleFormulas(vector<int>& cardIds) {
 	return res;		// return unique(res); but "==" has not been overloaded
 }
 
-set<int> getElements(Formula& f) {
-	set<int> res;
-	for (FormulaIter it(f, 0); it; ++it) {
-		res.insert(it.index());
+bits getElements(Formula& f) {
+	return f.getElements();
+}
+bits getElementsOnlySingle(Formula& f) {
+	bits res = 0;
+	int m = f.size();
+	for (int i = 0; i < m; i++) {
+		if (f.nums[i] == 1)res &= (bits)1 << f.elem[i];
 	}
 	return res;
 }
-set<int> getElements(vector<Card> cards) {
-	vector<int> vint = unique(cards);
-	set<int> res(vint.begin(), vint.end());
+bits getElements(vector<Card>& cards) {
+	bits res = 0;
+	for (auto c : cards) {
+		res |= (bits)1 << c;
+	}
 	return res;
 }
 
-vector<Card> filter(vector<Card>& element_cards, set<int>& elements) {
+vector<Card> cardFilter(vector<Card>& element_cards, bits elements) {
+	/*
+		remain if card in elements
+	*/
 	vector<Card> res;
-	for (auto i : element_cards) {
-		for (auto j : elements) {
-			if (i == j) {
-				res.push_back(i); break;
-			}
-		}
+	for (auto c : element_cards) {
+		if (c & elements)res.push_back(c);
+	}
+	return res;
+}
+vector<Card> cardNegativeFilter(vector<Card>& element_cards, bits elements) {
+	/*
+		remain if card not in elements
+	*/
+	vector<Card> res;
+	for (auto c : element_cards) {
+		if (!(c & elements))res.push_back(c);
 	}
 	return res;
 }
@@ -190,15 +183,21 @@ typedef vector<Card> Strategy;
 
 vector<Strategy> getAllPossibleStrategy(Formula& f, vector<Card>& hand) {
 	vector<Strategy> res;
-	set<int> required_elements = getElements(f);
+	bits required_elements = getElements(f);
 	vector<Card> element_cards;
 	vector<Card> number_cards;
 	vector<Card> other_cards;
 	splitCardsByType(hand, element_cards, number_cards, other_cards);
-	vector<Card> useful_element_cards = filter(element_cards, required_elements);
-	set<int> has_elements = getElements(useful_element_cards);
+	// find considered element cards
+	vector<Card> useful_element_cards = cardFilter(element_cards, required_elements);
+	bits has_elements = getElements(useful_element_cards);
 	if (has_elements != required_elements) {
 		return res;		// return an empty list of strategies
 	}
+	// find elements that has only one atom. They are not related to number cards.
+	bits single_elements = getElementsOnlySingle(f);
+	vector<Card> strategic_element_cards = cardNegativeFilter(useful_element_cards, single_elements);
+	// get all possible combinations (and meanings) of number cards and strategic element cards
+
 }
 
