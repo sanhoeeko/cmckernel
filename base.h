@@ -1,5 +1,6 @@
 #pragma once
 
+#include"defs.h"
 #include<stdlib.h>
 #include<string>
 #include<vector>
@@ -11,6 +12,25 @@ typedef unsigned __int64 uc8;
 typedef unsigned __int64 bits;	// It requires at most 63 elements.
 const int basesz = 8;			// In fact, the maximum number of element is 7. [elem] need a zero at its end.
 
+/*
+	We do not use std::set, but use [bits], with std::vector as an alternative representation of sets.
+*/
+vector<uc> bitsToVec(bits elems) {
+	vector<uc> res; res.reserve(basesz);
+	uc cnt = 0;
+	while (elems = elems >> 1) {
+		cnt++;
+		if (elems & 1)res.push_back(cnt);
+	}
+	return res;
+}
+bits vecToBits(vector<uc>&& vec) {
+	bits res = 0;
+	for (uc e : vec) {
+		res |= (bits)1 << e;
+	}
+	return res;
+}
 
 struct __base
 {
@@ -139,6 +159,12 @@ struct __base
 	void operator+=(__base& y) {
 		*this = *this + y;
 	}
+	bool operator==(__base& y) {
+		return *(uc8*)this->nums == *(uc8*)y.nums && *(uc8*)this->elem == *(uc8*)y.elem;
+	}
+	bool operator!=(__base& y) {
+		return *(uc8*)this->nums != *(uc8*)y.nums || *(uc8*)this->elem != *(uc8*)y.elem;
+	}
 	bits getElements() {
 		bits res = 0;
 		uc* ptr = elem;
@@ -148,11 +174,9 @@ struct __base
 		return res;
 	}
 	template<typename dtype>
-	void cast_to_elements(bits elements, dtype* dst) {
+	void cast_to_elements(vector<uc>& elements, dtype* dst) {
 		uc* ptr = elem;
-		int e = 0;
-		while (elements = elements >> 1) {
-			e++;
+		for (auto e : elements) {
 			if (*ptr == e) {
 				*dst++ = ptr[basesz]; ptr++;
 			}

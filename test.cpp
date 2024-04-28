@@ -1,6 +1,10 @@
-#include "matter.h"
+#include "reaction.h"
+#include "io.h"
 
 #include<iostream>
+
+#include<random>
+#include<time.h>
 
 int main() {
 	/*
@@ -17,8 +21,5 @@ int main() {
 	cout << to_string(f) << endl;
 	*/
 	ReadCMCtable("CMCtable.csv");
-	auto vec = filterMatterIff(((bits)1 << 1) + ((bits)1 << 8));
-	for (auto m : vec) {
-		cout << to_string(m) << endl;
-	}
+	GenerateCanReactMatrix("can_react.matrix");
 }
