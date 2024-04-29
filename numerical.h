@@ -69,9 +69,3 @@ VectorXi integerVec(VectorXr& v) {
 	}
 	return vi;
 }
-
-template <typename T>
-void operator+=(vector<T>& v1, vector<T>& v2)
-{
-	v1.insert(v1.end(), v2.begin(), v2.end());
-}

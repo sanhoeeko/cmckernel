@@ -5,13 +5,9 @@
 
 int main() {
 	ReadCMCtable("CMCtable.csv");
-	// GenerateCanReactMatrix("can_react.matrix");
-	Matter a = getMatterByName("FeS");
-	/*
-	Matter b = getMatterByName("CH3COOH");
-	auto v = getPossibleReactions(a, b);
-	for (auto& r : v) {
-		cout << to_string(r) << endl;
-	}*/
-	checkCanReactMatrix(a);
+	vector<uc> cards = { 1, 1, 7, 7, 8, 64, 64, 65 };
+	CardHolder ch;
+	ch.updateHand(cards);
+	StrategyList st = ch.getStrategies(getMatterByName("O2"));
+	cout << to_string(st) << endl;
 }

@@ -23,7 +23,7 @@ enum class CardType {
 	Element, Number, Others
 };
 
-inline CardType getCardType(int cardId) {
+inline CardType getCardType(uc cardId) {
 	if (cardId < Element_num) {
 		return CardType::Element;
 	}
@@ -57,22 +57,6 @@ inline string to_string(Formula& f) {
 		s += "(" + Atom_list[f.elem[i]] + "," + to_string(f.nums[i]) + ")";
 	}
 	return s;
-}
-
-template<typename ty>
-vector<ty> unique(vector<ty>& src) {
-	vector<ty> res;
-	bool flag = 0;
-	for (auto& i : src) {
-		flag = 0;
-		for (auto& j : res) {
-			if (i == j) {
-				flag = 1; break;
-			}
-		}
-		if(!flag) res.push_back(i);
-	}
-	return res;
 }
 
 inline vector<EvalFormula> fullCombine(EvalFormula& src, int mul) {
@@ -111,11 +95,15 @@ inline void splitCardsByType(vector<uc>& cardIds,
 	}
 }
 
-vector<Formula> geoAllPossibleFormulas(vector<uc>& cardIds) {
-	vector<uc> element_cards;
-	vector<uc> number_cards;
-	vector<uc> other_cards;
-	splitCardsByType(cardIds, element_cards, number_cards, other_cards);
+inline vector<uc> numToNumCardId(vector<uc>& nums) {
+	vector<uc> res; res.reserve(nums.size());
+	for (auto n : nums) {
+		res.push_back(n - 2 + Element_num);
+	}
+	return res;
+}
+
+vector<Formula> getAllPossibleFormulas(vector<uc>& element_cards, vector<uc>& number_cards) {
 	EvalFormula fs; fs.reserve(element_cards.size());
 	for (auto& id : element_cards) {
 		fs.push_back(atom(id));
@@ -146,7 +134,7 @@ bits getElementsOnlySingle(Formula& f) {
 	bits res = 0;
 	int m = f.size();
 	for (int i = 0; i < m; i++) {
-		if (f.nums[i] == 1)res &= (bits)1 << f.elem[i];
+		if (f.nums[i] == 1)res |= (bits)1 << f.elem[i];
 	}
 	return res;
 }
@@ -164,7 +152,7 @@ vector<Card> cardFilter(vector<Card>& element_cards, bits elements) {
 	*/
 	vector<Card> res;
 	for (auto c : element_cards) {
-		if (c & elements)res.push_back(c);
+		if (((bits)1 << c) & elements)res.push_back(c);
 	}
 	return res;
 }
@@ -174,30 +162,7 @@ vector<Card> cardNegativeFilter(vector<Card>& element_cards, bits elements) {
 	*/
 	vector<Card> res;
 	for (auto c : element_cards) {
-		if (!(c & elements))res.push_back(c);
+		if (!(((bits)1 << c) & elements))res.push_back(c);
 	}
 	return res;
 }
-
-typedef vector<Card> Strategy;
-
-vector<Strategy> getAllPossibleStrategy(Formula& f, vector<Card>& hand) {
-	vector<Strategy> res;
-	bits required_elements = getElements(f);
-	vector<Card> element_cards;
-	vector<Card> number_cards;
-	vector<Card> other_cards;
-	splitCardsByType(hand, element_cards, number_cards, other_cards);
-	// find considered element cards
-	vector<Card> useful_element_cards = cardFilter(element_cards, required_elements);
-	bits has_elements = getElements(useful_element_cards);
-	if (has_elements != required_elements) {
-		return res;		// return an empty list of strategies
-	}
-	// find elements that has only one atom. They are not related to number cards.
-	bits single_elements = getElementsOnlySingle(f);
-	vector<Card> strategic_element_cards = cardNegativeFilter(useful_element_cards, single_elements);
-	// get all possible combinations (and meanings) of number cards and strategic element cards
-
-}
-

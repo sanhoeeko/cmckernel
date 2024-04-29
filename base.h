@@ -173,6 +173,18 @@ struct __base
 		}
 		return res;
 	}
+	__base exclude(bits elements) {
+		__base res;
+		uc* px = this->elem;
+		int cnt = 0;
+		while (*px != 0) {
+			if ((((bits)1 << (*px)) & elements) != elements) {
+				res._insert(cnt++, *px, px[basesz]);
+			}
+			px++;
+		}
+		return res;
+	}
 	template<typename dtype>
 	void cast_to_elements(vector<uc>& elements, dtype* dst) {
 		uc* ptr = elem;

@@ -2,11 +2,7 @@
 
 #include"matter.h"
 #include"numerical.h"
-
-template<typename ty>
-inline bool in(ty& item, vector<ty>& v) {
-	return std::find(v.begin(), v.end(), item) != v.end();
-}
+#include"itertools.h"
 
 struct __reaction {
 	vector<Matter> reactants;
