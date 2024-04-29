@@ -3,14 +3,19 @@
 #include"matter.h"
 #include"numerical.h"
 
+template<typename ty>
+inline bool in(ty& item, vector<ty>& v) {
+	return std::find(v.begin(), v.end(), item) != v.end();
+}
+
 struct __reaction {
 	vector<Matter> reactants;
 	vector<Matter> resultants;
 	VectorXr coefs;
 
 	__reaction() {
-		reactants.reserve(2);
-		resultants.reserve(3);
+		reactants.resize(2);
+		resultants.resize(3);
 	}
 };
 
@@ -19,7 +24,7 @@ __reaction* reaction_ptr;
 
 void clearReactionPool() {
 	if (reaction_pool == NULL) {
-		reaction_pool = new __reaction[(size_t)1 << 16];
+		reaction_pool = new __reaction[10000];
 	}
 	reaction_ptr = reaction_pool;
 }
@@ -37,7 +42,7 @@ struct Reaction {
 	Real minEnthalpy() {
 		Real h = data->resultants[0]->h;
 		int n = data->resultants.size();
-		for (int i = 0; i < n; i++) {
+		for (int i = 1; i < n; i++) {
 			if (h > data->resultants[i]->h)h = data->resultants[i]->h;
 		}
 		return h;
@@ -137,16 +142,16 @@ struct ReactionSeeker {
 
 	bool reactionIsLegal(VectorXr& vec, Matter* resultants) {
 		// check if signs of matters are correct
-		for (int i = 1; i < num_of_reactants; i++) {
-			if (vec[i] >= 0)return false;
+		for (int i = 0; i < num_of_reactants; i++) {
+			if (vec[i] > -1e-4)return false;
 		}
 		for (int i = num_of_reactants; i < num_of_reactants + num_of_resultants; i++) {
-			if (vec[i] <= 0)return false;
+			if (vec[i] < 1e-4)return false;
 		}
 		// calculate enthalpy descent
 		getEnthalpy(resultants);
 		Real dG = vec.dot(this->hs);
-		if (dG > 0)return false;
+		if (dG > -1e-4)return false;
 		return true;
 	}
 
@@ -158,6 +163,7 @@ struct ReactionSeeker {
 		Matter* ifm = iff_matters.data();
 		// iter over all possible matters
 		for (int i = 0; i < n; i++) {
+			if (in(ifm[i], reactants))continue;
 			bool can_balance = balanceEq(ifm + i);
 			if (!can_balance)continue;
 			if (reactionIsLegal(coef_temp, ifm + i)) {
@@ -174,10 +180,12 @@ struct ReactionSeeker {
 		// iter over all possible matter pairs
 		for (int i = 0; i < num_of_pm; i++) {
 			Matter a = possible_matters[i];
+			if (in(a, reactants))continue;
 			resultant_ptr[0] = a;
 			bits defect = elements - a->elems;
 			vector<Matter> vec_b = filterMatterShould(defect, pm + i + 1, pm + num_of_pm);
 			for (Matter b : vec_b) {
+				if (in(b, reactants))continue;
 				resultant_ptr[1] = b;
 				bool can_balance = balanceEq(resultant_ptr);
 				if (!can_balance)continue;
@@ -195,14 +203,17 @@ struct ReactionSeeker {
 		static Matter resultant_ptr[3] = { NULL, NULL, NULL };
 		for (int i = 0; i < num_of_pm; i++) {
 			Matter a = possible_matters[i];
+			if (in(a, reactants))continue;
 			resultant_ptr[0] = a;
 			for (int j = i + 1; j < num_of_pm; j++) {
 				Matter b = possible_matters[j];
-				resultant_ptr[1] = b;			// resultant_ptr[1] != &std::get<1>£¬ÎªÊ²Ã´£¿£¿£¿£¡£¡£¡
+				if (in(b, reactants))continue;
+				resultant_ptr[1] = b;
 				bits elems_ab = a->elems | b->elems;
 				for (int k = j + 1; k < num_of_pm; k++) {
 					Matter c = possible_matters[k];
 					if ((elems_ab | c->elems) == elements) {
+						if (in(c, reactants))continue;
 						resultant_ptr[2] = c;
 						bool can_balance = balanceEq(resultant_ptr);
 						if (!can_balance)continue;
@@ -239,4 +250,9 @@ struct ReactionSeeker {
 bool canReact(Matter a, Matter b) {
 	ReactionSeeker rsker = ReactionSeeker({ a, b });
 	return rsker.canReact();
+}
+
+vector<Reaction> getPossibleReactions(Matter a, Matter b) {
+	ReactionSeeker rsker = ReactionSeeker({ a, b });
+	return rsker.getPossibleReactions();
 }
