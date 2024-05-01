@@ -27,11 +27,11 @@ struct SubsetIterator {
 	int cnt;
 	int max_cnt;
 
-	SubsetIterator(vector<ty>* v_ptr) {
+	SubsetIterator(vector<ty>* v_ptr, int start=0) {
 		pv = v_ptr;
 		full_size = pv->size();
 		temp = new vector<ty>(); temp->reserve(full_size);
-		cnt = 1;
+		cnt = start;
 		max_cnt = 1 << full_size;
 	}
 	vector<ty>* next() {

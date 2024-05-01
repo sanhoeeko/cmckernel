@@ -178,7 +178,7 @@ struct __base
 		uc* px = this->elem;
 		int cnt = 0;
 		while (*px != 0) {
-			if ((((bits)1 << (*px)) & elements) != elements) {
+			if (!(((bits)1 << (*px)) & elements)) {
 				res._insert(cnt++, *px, px[basesz]);
 			}
 			px++;

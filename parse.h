@@ -15,14 +15,17 @@ public:
 		buffer = new char[str.length()];
 	}
 	string next(char delimiter) {
-		while (*ptrnxt++ != delimiter) {
+		while (*ptrnxt != '\0' && *ptrnxt++ != delimiter) {
 			;
 		}
-		int len = ptrnxt - ptr - 1;
+		int len = *ptrnxt == '\0' ? ptrnxt - ptr : ptrnxt - ptr - 1;
 		memcpy(buffer, ptr, len * sizeof(char));
 		buffer[len] = '\0';
 		ptr = ptrnxt;
 		return string(buffer);
+	}
+	bool goes() {
+		return *ptr != '\0';
 	}
 };
 
@@ -36,8 +39,8 @@ enum class SymbolType {
 	Formula, Lbracket, Number
 };
 
-#define ILLEGAL_NAME_CASE 114514
-#define ILLEGAL_ELEMENT_CASE 114515
+#define ILLEGAL_NAME_CASE 1
+#define ILLEGAL_ELEMENT_CASE 2
 
 inline CharType getCharType(char c) {
 	if (c >= 'A' && c <= 'Z') {

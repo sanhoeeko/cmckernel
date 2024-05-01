@@ -9,7 +9,7 @@ const int Number_num = 6;
 const string Atom_list[Element_num] = {"[NOP]",
 	"H",	"He",	"Li",	"Be",	"B",	"C",	"N",	"O",	"F",	"Ne", 
 	"Na",	"Mg",	"Al",	"Si",	"P",	"S",	"Cl",	"Ar",	"K",	"Ca",
-	"Sc",	"Ti",	"V",	"Cr",	"Mn",	"Fe",	"Co",	"Ne",	"Cu",	"Zn",
+	"Sc",	"Ti",	"V",	"Cr",	"Mn",	"Fe",	"Co",	"Ni",	"Cu",	"Zn",
 	"Ga",	"Ge",	"As",	"Se",	"Br",	"Kr",	"Rb",	"Sr",	"Y",	"Zr",
 	"Nb",	"Mo",	"Tc",	"Ru",	"Rh",	"Pd",	"Ag",	"Cd",	"In",	"Sn",
 	"Sb",	"Te",	"I",	"Xe",	"Cs",	"Ba"
@@ -31,6 +31,32 @@ inline CardType getCardType(uc cardId) {
 		return CardType::Number;
 	}
 	return CardType::Others;
+}
+
+inline uc getCardIdByName(const string& name) {
+	if (name.size() == 1 && '0' <= name[0] && name[0] <= '9') {
+		return Element_num + stoi(name) - 2;	// constant 2 is fixed
+	}
+	else {
+		for (int i = 0; i < Element_num; i++) {
+			if (Atom_list[i] == name) {
+				return i;
+			}
+		}
+	}
+	throw 114514;
+}
+
+inline string getCardNameById(const uc id) {
+	if (id < Element_num) {
+		return Atom_list[id];
+	}
+	else if (id < Element_num + Number_num) {
+		return to_string(id - Element_num + 2);
+	}
+	else {
+		throw 114519;
+	}
 }
 
 inline Formula zero() {
@@ -86,6 +112,9 @@ inline vector<EvalFormula> fullCombine(EvalFormula& src, int mul) {
 
 inline void splitCardsByType(vector<uc>& cardIds, 
 	vector<uc>& element_cards, vector<uc>& number_cards, vector<uc>& other_cards) {
+	element_cards.clear();
+	number_cards.clear();
+	other_cards.clear();
 	for (auto& id : cardIds) {
 		switch (getCardType(id)) {
 		case CardType::Element:element_cards.push_back(id); break;

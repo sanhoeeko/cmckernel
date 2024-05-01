@@ -153,8 +153,8 @@ struct ReactionSeeker {
 
 	vector<Reaction> getPossibleReactions1() {
 		setNumOfResultants(1);
-		static vector<Reaction> res; res.clear();
-		static vector<Matter> iff_matters = filterMatterIff(elements, pm, pm + num_of_pm);
+		vector<Reaction> res;
+		vector<Matter> iff_matters = filterMatterIff(elements, pm, pm + num_of_pm);
 		int n = iff_matters.size();
 		Matter* ifm = iff_matters.data();
 		// iter over all possible matters
@@ -171,8 +171,8 @@ struct ReactionSeeker {
 
 	vector<Reaction> getPossibleReactions2() {
 		setNumOfResultants(2);
-		static vector<Reaction> res; res.clear();
-		static Matter resultant_ptr[2] = {NULL, NULL};
+		vector<Reaction> res;
+		Matter resultant_ptr[2] = {NULL, NULL};
 		// iter over all possible matter pairs
 		for (int i = 0; i < num_of_pm; i++) {
 			Matter a = possible_matters[i];
@@ -195,8 +195,8 @@ struct ReactionSeeker {
 
 	vector<Reaction> getPossibleReactions3() {
 		setNumOfResultants(3);
-		static vector<Reaction> res; res.clear();
-		static Matter resultant_ptr[3] = { NULL, NULL, NULL };
+		vector<Reaction> res;
+		Matter resultant_ptr[3] = { NULL, NULL, NULL };
 		for (int i = 0; i < num_of_pm; i++) {
 			Matter a = possible_matters[i];
 			if (in(a, reactants))continue;
@@ -251,4 +251,14 @@ bool canReact(Matter a, Matter b) {
 vector<Reaction> getPossibleReactions(Matter a, Matter b) {
 	ReactionSeeker rsker = ReactionSeeker({ a, b });
 	return rsker.getPossibleReactions();
+}
+
+vector<Matter> calculateMattersCanReactWith(Matter a) {
+	vector<Matter> ms;
+	for (Matter m : table) {
+		if (canReact(m, a)) {
+			ms.push_back(m);
+		}
+	}
+	return ms;
 }

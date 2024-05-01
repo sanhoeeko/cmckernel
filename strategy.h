@@ -111,13 +111,13 @@ struct CardHolder {
 		Formula target = m->formula.exclude(single_elements);
 		bits target_elements = m->elems - single_elements;
 		// get all possible combinations (and meanings) of number cards and strategic element cards
-		auto it = SubsetIterator(&strategic_element_cards);
+		auto it = SubsetIterator(&strategic_element_cards, 1);
 		while (it.goes()){
 			vector<Card>* element_subset = it.next();
 			if (getElements(*element_subset) != target_elements) {
 				continue;
 			}
-			auto jt = SubsetIterator(&number_cards);
+			auto jt = SubsetIterator(&number_cards, 0);
 			while (jt.goes()) {
 				vector<Card>* number_subset = jt.next();
 				vector<Formula> combinations = getAllPossibleFormulas(*element_subset, *number_subset);
@@ -151,7 +151,7 @@ void checkCanReactMatrix(Matter a) {
 			}
 		}
 		else {
-			if (std::find(ms.begin(), ms.end(), m) != ms.end()) {
+			if (in(m, ms)) {
 				cout << " x" << endl;	// should be "cannot react"
 			}
 			else{

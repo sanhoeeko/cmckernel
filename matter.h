@@ -91,7 +91,7 @@ void ReadCMCtable(const char* filename) {
 	fin.close();
 }
 
-Matter getMatterByName(const string&& name) {
+Matter getMatterByName(const string& name) {
 	for (Matter* m = table_start; m < table_end; m++) {
 		if ((*m)->name == name)return *m;
 	}
@@ -168,6 +168,25 @@ vector<pair<Matter, Matter>> filterMatterPair(bits elements) {
 		for (auto b : vec_ab) {
 			if (b->formula != a->formula) {
 				res.push_back(make_pair(a, b));
+			}
+		}
+	}
+	return res;
+}
+
+vector<Matter> getAllPossibleMatters(vector<uc> cards) {
+	static vector<uc> element_cards;
+	static vector<uc> number_cards;
+	static vector<uc> other_cards;
+	splitCardsByType(cards, element_cards, number_cards, other_cards);
+	vector<Formula> fs = getAllPossibleFormulas(element_cards, number_cards);
+	bits elements = getElements(element_cards);
+	vector<Matter> sub_table = filterMatterIff(elements, table_start, table_end);
+	vector<Matter> res;
+	for (Matter m : sub_table) {
+		for (Formula& f : fs) {
+			if (f == m->formula) {
+				res.push_back(m); break;
 			}
 		}
 	}
