@@ -88,6 +88,28 @@ string _queryReactions(string& matter_pair) {
 	return to_string(rs);
 }
 
+string _queryWhichHasMinH(string& matters) {
+	auto sp = Split(matters);
+	float h_min = FLT_MAX;
+	Matter current_matter = NULL;
+	while (sp.goes())
+	{
+		Matter m = getMatterByName(sp.next(','));
+		if (m == NULL) throw 114520;
+		if (m->h < h_min) {
+			h_min = m->h; current_matter = m;
+		}
+	}
+	return to_string(current_matter);
+}
+
+string _showAllMattersHasElement(string& element) {
+	uc elem = getCardIdByName(element);
+	bits elems = (bits)1 << elem;
+	vector<Matter> ms = filterMatterShould(elems, table_start, table_end);
+	return to_string(ms);
+}
+
 // Interfaces
 
 void Init() {
@@ -116,4 +138,12 @@ const char* QueryPossibleMatters(char* x) {
 
 const char* QueryReactions(char* x) {
 	return ctypesWrapper(_queryReactions, x);
+}
+
+const char* QueryWhichHasMinH(char* x) {
+	return ctypesWrapper(_queryWhichHasMinH, x);
+}
+
+const char* ShowAllMattersHasElement(char* x) {
+	return ctypesWrapper(_showAllMattersHasElement, x);
 }

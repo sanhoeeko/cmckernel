@@ -16,9 +16,17 @@ def isSubsequence(sub: list, main: list):
     return i == sub_len
 
 
-def removeSubsequence(main, sub):
+def removeSubsequence(main: list, sub: list):
+    _sub = sub.copy()
     result = []
     for item in main:
-        if item not in sub:
+        if item not in _sub:
             result.append(item)
+        else:
+            _sub.remove(item)
     return result
+
+
+def getResultantsFromEq(eq: str):
+    resultants = eq.split(' -> ')[1].split(' + ')
+    return [resultant.split(' ')[1].strip() for resultant in resultants]

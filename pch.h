@@ -19,5 +19,7 @@ DLLEXPORT const char* CardIdsToNames(char* x);
 DLLEXPORT const char* QueryLegalStrategies(char* x);
 DLLEXPORT const char* QueryPossibleMatters(char* x);
 DLLEXPORT const char* QueryReactions(char* x);
+DLLEXPORT const char* QueryWhichHasMinH(char* x);
+DLLEXPORT const char* ShowAllMattersHasElement(char* x);
 
 #endif //PCH_H

@@ -14,6 +14,8 @@ class CmcKernel:
             'QueryLegalStrategies',
             'QueryPossibleMatters',
             'QueryReactions',
+            'QueryWhichHasMinH',
+            'ShowAllMattersHasElement',
         ]
 
         # Specify the return type and argument type for the C++ function
@@ -24,8 +26,8 @@ class CmcKernel:
         # Attach cpp functions to this object
         for func_name in str_function_list:
             # 'func_name=func_name' is similar to c++ capturing
-            setattr(self, func_name, lambda x, func_name=func_name: 
-                    self.call_cpp_function(func_name, x))
+            setattr(self, func_name, lambda x, func_name=func_name:
+            self.call_cpp_function(func_name, x))
 
         # initialize the CMC table
         self.lib.Init()
@@ -39,13 +41,13 @@ class CmcKernel:
 
         # Convert the C-style string back to a Python string
         return result.decode('utf-8')
-    
+
     def CardNamesToIds(self):
         """
         Format: ',' split
         """
         pass
-    
+
     def CardIdsToNames(self):
         """
         Format: ',' split
@@ -55,21 +57,35 @@ class CmcKernel:
     def QueryLegalStrategies(self):
         """
         Input format: {Matter to React};{card1},{card2},...
-		Output format: {status};{Matter1}:[[strategy1],[...],] \n {Matter2}:[[...],],...
+        Output format: {status};{Matter1}:[[strategy1],[...],] \n {Matter2}:[[...],],...
         """
         pass
 
     def QueryPossibleMatters(self):
         """
         Input format: card names split by space
-		Output format: [...] list of matters
+        Output format: [...] list of matters
         """
         pass
 
     def QueryReactions(self):
         """
         Input format: {Matter a},{Matter b}
-		Output format: [...] list of reactions
+        Output format: [...] list of reactions
+        """
+        pass
+
+    def QueryWhichHasMinH(self):
+        """
+        Input format: {Matter a},{Matter b},{Matter c}...
+        Output format: {Matter x}
+        """
+        pass
+
+    def ShowAllMattersHasElement(self):
+        """
+        Input format: the name of an element
+        Output format: [...] list of matters
         """
         pass
 
@@ -78,17 +94,20 @@ cmc_kernel = CmcKernel()
 
 elements = ["H", "Li", "Be", "B", "C", "N", "O", "F",
             "Na", "Mg", "Al", "Si", "P", "S", "Cl", "K", "Ca",
-            "Sc", "Ti", "V", "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn",
-            "Ga", "Ge", "As", "Se", "Br", "Rb", "Sr", "Y", "Zr",
-            "Nb", "Mo", "Tc", "Ru", "Rh", "Pd", "Ag", "Cd", "In", "Sn",
-            "Sb", "Te", "I", "Cs", "Ba"]
+            "Ti", "V", "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn",
+            "As", "Se", "Br",
+            "Ag", "Cd", "Sn",
+            "I", "Cs", "Ba"]
 numbers = ["2", "3", "4"]
 
-deck1 = ["H", "O", "2", "3"]
-deck2 = ["N", "Na", "Mg", "Al", "Si", "P", "S", "Cl", "Fe", "Cu", "Br", "I", "4"]
-deck3 = ut.removeSubsequence(ut.removeSubsequence(elements + numbers, deck1), deck2)
+deck1 = ["H", "O", "2"]
+deck2 = ["N", "P", "S", "Cl", "3"]
+deck3 = ["Na", "Mg", "Al", "Si", "Fe", "Cu", "Br", "I", "4"]
+deck4 = ut.removeSubsequence(
+    ut.removeSubsequence(ut.removeSubsequence(elements + numbers, deck1), deck2),
+    deck3)
 
 
 def randCard(n: int):
-    total_deck = deck1 * 8 + deck2 * 2 + deck3
+    total_deck = deck1 * 8 + deck2 * 4 + deck3 * 2 + deck4
     return rd.sample(total_deck, n)

@@ -40,6 +40,7 @@ string strategy_status[16] = {
 	"Success",
 	"Terminal matter on the field",
 	"I need element cards",
+	"I need auxiliary cards"
 };
 
 struct StrategyList {
@@ -52,6 +53,9 @@ struct StrategyList {
 	void push_back(Matter m, const vector<vector<Card>>& vc) {
 		if (vc.size() == 0)return;
 		matter_and_cards.push_back(make_pair(m, vc));
+	}
+	int size() {
+		return matter_and_cards.size();
 	}
 	string toString() {
 		string str = strategy_status[status] + "; ";
@@ -93,6 +97,9 @@ struct CardHolder {
 		StrategyList res(0);
 		for (Matter m : possible_matter) {
 			res.push_back(m, getAllPossibleExpression(m));
+		}
+		if (res.size() == 0) {
+			res.status = 3;
 		}
 		return res;
 	}
