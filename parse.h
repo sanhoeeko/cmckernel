@@ -39,8 +39,8 @@ enum class SymbolType {
 	Formula, Lbracket, Number
 };
 
-#define ILLEGAL_NAME_CASE 1
-#define ILLEGAL_ELEMENT_CASE 2
+#define ILLEGAL_NAME_CASE 114514
+#define ILLEGAL_ELEMENT_CASE 114515
 
 inline CharType getCharType(char c) {
 	if (c >= 'A' && c <= 'Z') {
@@ -101,7 +101,7 @@ inline void clear_buffer_push_str(char*& bufptr, char* buffer, vector<FSU>& word
 	bufptr = buffer;
 }
 
-Formula formulaFromName(string& _name) {
+Formula formulaFromName(const string& _name) {
 	string name = _name + "X";				// "X" itself will not be parsed, but it refreshes the state
 	ParserState state = ParserState::Void;
 	char buffer[8];

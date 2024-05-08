@@ -3,6 +3,7 @@
 #include"base.h"
 #include<iostream>
 
+enum FreeEnergy { H, _S, G };
 const int Element_num = 64;
 const int Number_num = 6;
 
@@ -90,7 +91,7 @@ inline vector<EvalFormula> fullCombine(EvalFormula& src, int mul) {
 	int N = 1 << n;
 	vector<EvalFormula> res; res.reserve(N);
 	for (int i = 1; i < N; i++) {
-		EvalFormula evf;
+		EvalFormula evf; evf.reserve(n);
 		vector<Formula> temp; temp.reserve(n);
 		int combination_repr = i;
 		for (int j = 0; j < n; j++) {
@@ -102,7 +103,7 @@ inline vector<EvalFormula> fullCombine(EvalFormula& src, int mul) {
 			}
 			combination_repr = combination_repr >> 1;
 		}
-		EvalFormula evf2;
+		EvalFormula evf2; evf2.reserve(n);
 		evf2.push_back(eval(evf, mul));
 		evf2.insert(evf2.end(), temp.begin(), temp.end());
 		res.push_back(evf2);
@@ -137,22 +138,21 @@ vector<Formula> getAllPossibleFormulas(vector<uc>& element_cards, vector<uc>& nu
 	for (auto& id : element_cards) {
 		fs.push_back(atom(id));
 	}
-	vector<EvalFormula>* evfs = new vector<EvalFormula>();
-	vector<EvalFormula>* evfs_buffer = new vector<EvalFormula>();
-	evfs->push_back(fs);
+	static vector<EvalFormula> evfs; evfs.clear();
+	static vector<EvalFormula> evfs_buffer; evfs_buffer.clear();
+	evfs.push_back(fs);
 	for (auto& num : number_cards) {
-		evfs_buffer->clear();
-		for (auto& evf : *evfs) {
+		evfs_buffer.clear();
+		for (auto& evf : evfs) {
 			auto temps = fullCombine(evf, num);
-			evfs_buffer->insert(evfs_buffer->end(), temps.begin(), temps.end());
+			evfs_buffer.insert(evfs_buffer.end(), temps.begin(), temps.end());
 		}
 		std::swap(evfs, evfs_buffer);
 	}
-	vector<Formula> res; res.reserve(evfs->size());
-	for (auto& evf : *evfs) {
+	vector<Formula> res; res.reserve(evfs.size());
+	for (auto& evf : evfs) {
 		res.push_back(eval(evf));
 	}
-	delete evfs; delete evfs_buffer;
 	return res;		// return unique(res); but "==" has not been overloaded
 }
 

@@ -5,22 +5,38 @@
 #include<fstream>
 #include<algorithm>
 
+
+string getState(string& state) {
+	char c = state[1];
+	switch (c)
+	{
+	case 's':return "(s)";
+	case 'l':return "(l)";
+	case 'g':return "(g)";
+	case 'a':return "(aq)";
+	default:return "(?)";
+	}
+}
+
 class ConstMatter {
 public:
 	Formula formula;
 	bits elems;			// accelate computation
 	string name;
 	string state;
+	Real hsg[3];
 	int id;
-	Real h;			// enthalpy
 
-	ConstMatter(int id, string& name, string& state, string& enthalpy) {
+	ConstMatter(int id, const string& name, string& state, Real enthalpy, Real entropy, Real gibbs) {
 		this->formula = formulaFromName(name);
 		this->elems = getElements(formula);
 		this->name = name;
-		this->state = state;
+		this->state = getState(state);
 		this->id = id;
-		this->h = stof(enthalpy);
+		hsg[0] = enthalpy; hsg[1] = -entropy /* negative sign */; hsg[2] = gibbs;
+	}
+	Real& g(FreeEnergy mode) {
+		return hsg[mode];
 	}
 };
 
@@ -29,6 +45,24 @@ typedef ConstMatter* Matter;
 vector<ConstMatter*> table;
 ConstMatter** table_start;
 ConstMatter** table_end;
+
+void addMatterToTable(ConstMatter* m) {
+	bool already_has = false;
+	for (auto it = table.begin(); it != table.end(); ++it) {
+		if ((*it)->name == m->name) {
+			if ((*it)->g(G) <= m->g(G)) {
+				already_has = true;
+			}
+			else {
+				table.erase(it);
+			}
+			break;
+		}
+	}
+	if (!already_has) {
+		table.push_back(m);
+	}
+}
 
 
 inline string to_string(Matter m) {
@@ -42,53 +76,6 @@ inline bits getElements(vector<Matter>& ms) {
 		res |= m->elems;	// get union of elements
 	}
 	return res;
-}
-
-void ReadCMCtable(const char* filename) {
-	ifstream fin(filename);
-	if (!fin.is_open()) {
-		cout << "CMCTable file does not exist!" << endl;
-		throw "File not exists";
-	}
-	string line;
-	std::getline(fin, line);		// omit the first line
-	while (std::getline(fin, line)) {
-		Split sp = Split(line);
-		string name = sp.next(',');
-		string state = sp.next(',');
-		string enthalpy = sp.next(',');
-		try {
-			bool already_has = false;
-			for (auto it = table.begin(); it != table.end(); ++it) {
-				if ((*it)->name == name) {
-					if ((*it)->h <= stof(enthalpy)) {
-						already_has = true;
-					}
-					else {
-						table.erase(it);
-					}
-					break;
-				}
-			}
-			if (!already_has) {
-				table.push_back(new ConstMatter(0, name, state, enthalpy));
-			}
-		}
-		catch (int exception) {
-			if (exception == ILLEGAL_NAME_CASE || exception ==  ILLEGAL_ELEMENT_CASE) {
-				;	// do not take this matter into account
-			}
-			else {
-				throw "Real exception in parsing.";
-			}
-		}
-	}
-	table_start = table.data();
-	table_end = table.data() + table.size();
-	for (int i = 0; i < table.size(); i++) {
-		table[i]->id = i;
-	}
-	fin.close();
 }
 
 Matter getMatterByName(const string& name) {

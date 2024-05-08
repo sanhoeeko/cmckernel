@@ -76,21 +76,37 @@ struct CardHolder {
 	vector<Card> number_cards;
 	vector<Card> other_cards;
 	bits elements;
-	Advisor* advisor;
+	// Advisor* advisor;
 
 	CardHolder() {
-		advisor = new Advisor();
+		// advisor = new Advisor();
 	}
 	void updateHand(vector<Card>& cards) {
 		hand = cards;
 		splitCardsByType(hand, element_cards, number_cards, other_cards);
 		elements = getElements(element_cards);
 	}
+	StrategyList getStrategies() {
+		/*
+			If there is no matter to react
+		*/
+		vector<Matter> possible_matter = filterMatterCould(elements, table_start, table_end);
+		if (possible_matter.size() == 0)return StrategyList(2);
+		StrategyList res(0);
+		for (Matter m : possible_matter) {
+			res.push_back(m, getAllPossibleExpression(m));
+		}
+		if (res.size() == 0) {
+			res.status = 3;
+		}
+		return res;
+	}
 	StrategyList getStrategies(Matter m) {
 		/*
 			get all ways to play facing a Matter m
 		*/
-		vector<Matter> ms = advisor->getMattersCanReactWith(m);
+		// vector<Matter> ms = advisor->getMattersCanReactWith(m);
+		vector<Matter> ms = calculateMattersCanReactWith(m);
 		if (ms.size() == 0)return StrategyList(1);
 		vector<Matter> possible_matter = filterMatterCould(elements, ms.data(), ms.data() + ms.size());
 		if (possible_matter.size() == 0)return StrategyList(2);

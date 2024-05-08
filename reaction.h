@@ -1,6 +1,6 @@
 #pragma once
 
-#include"matter.h"
+#include"ions.h"
 #include"numerical.h"
 #include"itertools.h"
 
@@ -36,10 +36,10 @@ struct Reaction {
 		data->coefs = coefs;
 	}
 	Real minEnthalpy() {
-		Real h = data->resultants[0]->h;
+		Real h = data->resultants[0]->g(G);
 		int n = data->resultants.size();
 		for (int i = 1; i < n; i++) {
-			if (h > data->resultants[i]->h)h = data->resultants[i]->h;
+			if (h > data->resultants[i]->g(G))h = data->resultants[i]->g(G);
 		}
 		return h;
 	}
@@ -106,7 +106,7 @@ struct ReactionSeeker {
 		// initialize [hs]: enthalpies of reactants and resultants
 		hs = VectorXr(num_of_reactants + num_of_resultants);
 		for (int i = 0; i < num_of_reactants; i++) {
-			hs[i] = reactants[i]->h;
+			hs[i] = reactants[i]->g(G);
 		}
 	}
 
@@ -132,7 +132,7 @@ struct ReactionSeeker {
 
 	void getEnthalpy(Matter* resultants) {
 		for (int i = 0; i < num_of_resultants; i++) {
-			hs[num_of_reactants + i] = resultants[i]->h;
+			hs[num_of_reactants + i] = resultants[i]->g(G);
 		}
 	}
 
@@ -232,14 +232,77 @@ struct ReactionSeeker {
 		return v1;
 	}
 
-	bool canReact() {
-		vector<Reaction> v1 = getPossibleReactions1();
-		if (!v1.empty())return true;
-		vector<Reaction> v2 = getPossibleReactions2();
-		if (!v2.empty())return true;
-		vector<Reaction> v3 = getPossibleReactions3();
-		if (!v3.empty())return true;
+	bool canReact1() {
+		setNumOfResultants(1);
+		vector<Matter> iff_matters = filterMatterIff(elements, pm, pm + num_of_pm);
+		int n = iff_matters.size();
+		Matter* ifm = iff_matters.data();
+		// iter over all possible matters
+		for (int i = 0; i < n; i++) {
+			if (in(ifm[i], reactants))continue;
+			bool can_balance = balanceEq(ifm + i);
+			if (!can_balance)continue;
+			if (reactionIsLegal(coef_temp, ifm + i)) {
+				return true;
+			}
+		}
 		return false;
+	}
+
+	bool canReact2() {
+		setNumOfResultants(2);
+		Matter resultant_ptr[2] = { NULL, NULL };
+		// iter over all possible matter pairs
+		for (int i = 0; i < num_of_pm; i++) {
+			Matter a = possible_matters[i];
+			if (in(a, reactants))continue;
+			resultant_ptr[0] = a;
+			bits defect = elements - a->elems;
+			vector<Matter> vec_b = filterMatterShould(defect, pm + i + 1, pm + num_of_pm);
+			for (Matter b : vec_b) {
+				if (in(b, reactants))continue;
+				resultant_ptr[1] = b;
+				bool can_balance = balanceEq(resultant_ptr);
+				if (!can_balance)continue;
+				if (reactionIsLegal(coef_temp, resultant_ptr)) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	bool canReact3() {
+		setNumOfResultants(3);
+		Matter resultant_ptr[3] = { NULL, NULL, NULL };
+		for (int i = 0; i < num_of_pm; i++) {
+			Matter a = possible_matters[i];
+			if (in(a, reactants))continue;
+			resultant_ptr[0] = a;
+			for (int j = i + 1; j < num_of_pm; j++) {
+				Matter b = possible_matters[j];
+				if (in(b, reactants))continue;
+				resultant_ptr[1] = b;
+				bits elems_ab = a->elems | b->elems;
+				for (int k = j + 1; k < num_of_pm; k++) {
+					Matter c = possible_matters[k];
+					if ((elems_ab | c->elems) == elements) {
+						if (in(c, reactants))continue;
+						resultant_ptr[2] = c;
+						bool can_balance = balanceEq(resultant_ptr);
+						if (!can_balance)continue;
+						if (reactionIsLegal(coef_temp, resultant_ptr)) {
+							return true;
+						}
+					}
+				}
+			}
+		}
+		return false;
+	}
+
+	bool canReact() {
+		return canReact1() || canReact2() || canReact3();
 	}
 };
 
