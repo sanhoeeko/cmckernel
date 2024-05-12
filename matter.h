@@ -39,35 +39,11 @@ public:
 		return hsg[mode];
 	}
 };
-
 typedef ConstMatter* Matter;
-
-vector<ConstMatter*> table;
-ConstMatter** table_start;
-ConstMatter** table_end;
-
-void addMatterToTable(ConstMatter* m) {
-	bool already_has = false;
-	for (auto it = table.begin(); it != table.end(); ++it) {
-		if ((*it)->name == m->name) {
-			if ((*it)->g(G) <= m->g(G)) {
-				already_has = true;
-			}
-			else {
-				table.erase(it);
-			}
-			break;
-		}
-	}
-	if (!already_has) {
-		table.push_back(m);
-	}
-}
 
 
 inline string to_string(Matter m) {
-	// return m->name + m->state;
-	return m->name;
+	return m->name + m->state;
 }
 
 inline bits getElements(vector<Matter>& ms) {
@@ -76,13 +52,6 @@ inline bits getElements(vector<Matter>& ms) {
 		res |= m->elems;	// get union of elements
 	}
 	return res;
-}
-
-Matter getMatterByName(const string& name) {
-	for (Matter* m = table_start; m < table_end; m++) {
-		if ((*m)->name == name)return *m;
-	}
-	return NULL;
 }
 
 vector<Matter> filterMatterCould(bits elements, Matter* m, Matter* mend) {
@@ -129,7 +98,7 @@ vector<Matter> filterMatterCouldShould(bits could_has, bits should_has, Matter* 
 		the matter could has a set of elements, and must has another set of elements
 	*/
 	vector<Matter> res;
-	for (; m < table_end; m++) {
+	for (; m < mend; m++) {
 		if (((*m)->elems | could_has) == could_has && ((*m)->elems & should_has) == should_has) {
 			res.push_back((*m));
 		}
@@ -137,14 +106,14 @@ vector<Matter> filterMatterCouldShould(bits could_has, bits should_has, Matter* 
 	return res;
 }
 
-vector<pair<Matter, Matter>> filterMatterPair(bits elements) {
+vector<pair<Matter, Matter>> filterMatterPair(bits elements, Matter* m, Matter* mend) {
 	/*
 		return all possible pairs of matters (A, B), where elems(A) | elems(B) == elements
 		The intuitive method is O(N^2), where N is the size of CMC table,
 		however, this method is slightly faster.
 	*/
 	vector<pair<Matter, Matter>> res;
-	vector<Matter> vec_a = filterMatterCould(elements, table_start, table_end);
+	vector<Matter> vec_a = filterMatterCould(elements, m, mend);
 	int n = vec_a.size();
 	Matter* pstart = vec_a.data();
 	Matter* pend = pstart + n;
@@ -161,14 +130,14 @@ vector<pair<Matter, Matter>> filterMatterPair(bits elements) {
 	return res;
 }
 
-vector<Matter> getAllPossibleMatters(vector<uc> cards) {
+vector<Matter> getAllPossibleMatters(vector<uc> cards, Matter* m, Matter* mend) {
 	static vector<uc> element_cards;
 	static vector<uc> number_cards;
 	static vector<uc> other_cards;
 	splitCardsByType(cards, element_cards, number_cards, other_cards);
 	vector<Formula> fs = getAllPossibleFormulas(element_cards, number_cards);
 	bits elements = getElements(element_cards);
-	vector<Matter> sub_table = filterMatterIff(elements, table_start, table_end);
+	vector<Matter> sub_table = filterMatterIff(elements, m, mend);
 	vector<Matter> res;
 	for (Matter m : sub_table) {
 		for (Formula& f : fs) {

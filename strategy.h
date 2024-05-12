@@ -6,11 +6,14 @@
 
 struct Advisor{
 	MatrixXi can_react_table;
+	VectorXi react_abilities;
+	Matter* table_start;
+	Matter* table_end;
 	int num_of_matter;
 
-	Advisor() {
+	Advisor(vector<Matter>& table) {
 		vector<int> temp;
-		int can_react_mat_size = readCanReactMatrix("can_react.matrix", temp);
+		int can_react_mat_size = readCanReactMatrix("canReact.dat", temp);
 		this->can_react_table = MatrixXi(can_react_mat_size, can_react_mat_size);
 		this->can_react_table.setZero();
 		int length = can_react_mat_size - 1;
@@ -21,7 +24,10 @@ struct Advisor{
 			length--;
 		}
 		this->can_react_table += this->can_react_table.transpose().eval();
+		this->react_abilities = can_react_table.rowwise().sum();
 		this->num_of_matter = can_react_mat_size;
+		this->table_start = table.data();
+		this->table_end = table.data() + table.size();
 	}
 
 	vector<Matter> getMattersCanReactWith(Matter m) {
@@ -29,10 +35,13 @@ struct Advisor{
 		int* ptr = can_react_table.data() + m->id * num_of_matter;
 		for (int i = 0; i < num_of_matter; i++) {
 			if (ptr[i] == 1) {
-				res.push_back(table[i]);
+				res.push_back(table_start[i]);
 			}
 		}
 		return res;
+	}
+	int reactAbilityOf(Matter m) {
+		return react_abilities[m->id];
 	}
 };
 
@@ -76,15 +85,35 @@ struct CardHolder {
 	vector<Card> number_cards;
 	vector<Card> other_cards;
 	bits elements;
-	// Advisor* advisor;
+	Advisor* advisor;
+	Matter* table_start;
+	Matter* table_end;
 
-	CardHolder() {
-		// advisor = new Advisor();
+	CardHolder(Advisor* ptr_advisor) {
+		advisor = ptr_advisor;
+		table_start = advisor->table_start;
+		table_end = advisor->table_end;
 	}
-	void updateHand(vector<Card>& cards) {
+	void updateHand(const vector<Card>& cards) {
 		hand = cards;
 		splitCardsByType(hand, element_cards, number_cards, other_cards);
 		elements = getElements(element_cards);
+	}
+	vector<Matter> availableMatters() {
+		vector<Matter> possible_matter = filterMatterCould(elements, table_start, table_end);
+		vector<Matter> res;
+		for (Matter m : possible_matter) {
+			if (!getAllPossibleExpression(m).empty())res.push_back(m);
+		}
+		return res;
+	}
+	int score() {
+		vector<Matter> ms = availableMatters();
+		int s = 0;
+		for (Matter m : ms) {
+			s += advisor->reactAbilityOf(m);
+		}
+		return s;
 	}
 	StrategyList getStrategies() {
 		/*
@@ -105,8 +134,8 @@ struct CardHolder {
 		/*
 			get all ways to play facing a Matter m
 		*/
-		// vector<Matter> ms = advisor->getMattersCanReactWith(m);
-		vector<Matter> ms = calculateMattersCanReactWith(m);
+		vector<Matter> ms = advisor->getMattersCanReactWith(m);
+		// vector<Matter> ms = calculateMattersCanReactWith(m);
 		if (ms.size() == 0)return StrategyList(1);
 		vector<Matter> possible_matter = filterMatterCould(elements, ms.data(), ms.data() + ms.size());
 		if (possible_matter.size() == 0)return StrategyList(2);
@@ -160,6 +189,9 @@ struct CardHolder {
 	}
 };
 
+
+/* deprecated
+
 void checkCanReactMatrix(Matter a) {
 	Advisor advisor;
 	vector<Matter> ms = advisor.getMattersCanReactWith(a);
@@ -183,3 +215,4 @@ void checkCanReactMatrix(Matter a) {
 		}
 	}
 }
+*/

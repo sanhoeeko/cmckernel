@@ -77,16 +77,20 @@ struct ReactionSeeker {
 	VectorXr hs;
 	VectorXr coef_temp;
 	bits elements;
+	Matter* table_start;
+	Matter* table_end;
 	Matter* pm;
 	int num_of_reactants, num_of_elements;
 	int num_of_resultants = -1;
 	int num_of_pm;
 
-	ReactionSeeker(vector<Matter>&& reactants) {
+	ReactionSeeker(vector<Matter>&& reactants, vector<Matter>& table) {
 		clearReactionPool();
 		this->reactants = reactants;
 		this->num_of_reactants = reactants.size();
 		this->elements = getElements(reactants);
+		this->table_start = table.data();
+		this->table_end = table.data() + table.size();
 		this->possible_matters = filterMatterCould(elements, table_start, table_end);
 		element_set = bitsToVec(elements);
 		num_of_elements = element_set.size();
@@ -305,23 +309,3 @@ struct ReactionSeeker {
 		return canReact1() || canReact2() || canReact3();
 	}
 };
-
-bool canReact(Matter a, Matter b) {
-	ReactionSeeker rsker = ReactionSeeker({ a, b });
-	return rsker.canReact();
-}
-
-vector<Reaction> getPossibleReactions(Matter a, Matter b) {
-	ReactionSeeker rsker = ReactionSeeker({ a, b });
-	return rsker.getPossibleReactions();
-}
-
-vector<Matter> calculateMattersCanReactWith(Matter a) {
-	vector<Matter> ms;
-	for (Matter m : table) {
-		if (canReact(m, a)) {
-			ms.push_back(m);
-		}
-	}
-	return ms;
-}

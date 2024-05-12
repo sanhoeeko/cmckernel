@@ -25,9 +25,6 @@ public:
 	}
 };
 
-vector<Cation*> cations;
-vector<Anion*> anions;
-
 
 bool isOnlyOneUpperCase(const char* ptr) {
 	int cnt = 0;
@@ -89,59 +86,4 @@ string getIonName(string& name) {
 	string res= string(buffer);
 	delete[] buffer;
 	return res;
-}
-
-void ReadCMCtable(const char* filename) {
-	ifstream fin(filename);
-	if (!fin.is_open()) {
-		cout << "CMCTable file does not exist!" << endl;
-		throw "File not exists";
-	}
-	string line;
-	std::getline(fin, line);		// omit the first line
-	while (std::getline(fin, line)) {
-		Split sp = Split(line);
-		string name = sp.next(',');
-		string state = sp.next(',');
-		string enthalpy = sp.next(',');
-		string entropy = sp.next(',');
-		string gibbs = sp.next(',');
-		try {
-			int charge = getCharge(name);
-			if (charge == 0) {
-				addMatterToTable(new ConstMatter(0, name, state, stod(enthalpy), stod(entropy), stod(gibbs)));
-			}
-			else {
-				if (charge > 0) {
-					cations.push_back(new Cation(0, getIonName(name), state, stod(enthalpy), stod(entropy), stod(gibbs), charge));
-				}
-				else {
-					anions.push_back(new Anion(0, getIonName(name), state, stod(enthalpy), stod(entropy), stod(gibbs), -charge));
-				}
-			}
-		}
-		catch (int exception) {
-			if (exception == ILLEGAL_NAME_CASE || exception == ILLEGAL_ELEMENT_CASE) {
-				;	// do not take this matter into account
-			}
-			else {
-				throw "Real exception in parsing.";
-			}
-		}
-	}
-	// generate matters from cations and anions
-	for (Cation*& c : cations) {
-		for (Anion*& a : anions) {
-			addMatterToTable(ionicCompound(*c, *a));
-		}
-	}
-	// read Ksp table and substitute insoluble salts
-	
-	// add id
-	table_start = table.data();
-	table_end = table.data() + table.size();
-	for (int i = 0; i < table.size(); i++) {
-		table[i]->id = i;
-	}
-	fin.close();
 }

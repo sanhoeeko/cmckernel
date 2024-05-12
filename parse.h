@@ -9,7 +9,7 @@ public:
 	const char* ptrnxt;
 	char* buffer;
 
-	Split(string& str) {
+	Split(const string& str) {
 		ptr = str.c_str();
 		ptrnxt = ptr;
 		buffer = new char[str.length()];
@@ -157,4 +157,19 @@ Formula formulaFromName(const string& _name) {
 		res += fsu.formula;
 	}
 	return res;
+}
+
+vector<uc> parseCardIds(const string& cardIds) {
+	auto sp = Split(cardIds);
+	vector<uc> cid;
+	int id;
+	while (sp.goes()) {
+		try {
+			id = stoi(sp.next(','));
+		}
+		catch (std::invalid_argument&) {
+			throw 114522;
+		}
+		cid.push_back(id);
+	}
 }
