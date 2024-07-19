@@ -1,4 +1,5 @@
 import ast
+import random as rd
 
 import kernel
 import utils as ut
@@ -57,20 +58,30 @@ class PlayerBase:
         # it is certain that all cards to play are in hand
         self.hand = ut.removeSubsequence(self.hand, card_names)
 
+    def exchangeCard(self, card_name: str):
+        if card_name in self.hand:
+            self.hand = ut.removeSubsequence(self.hand, [card_name])
+            self.draw()
+
     def win(self):
         return len(self.hand) == 0
 
     def showHand(self):
         print(self.hand)
 
-    def getLegalChoices(self, matter_to_react: str):
+    def getLegalChoices(self, matter_to_react, cards=None):
         """
         return StrategyList object or throw exceptions
         """
-        hand_str = ','.join(list(map(str, self.hand)))
+        if cards is None:
+            cards = self.hand
+        hand_str = ','.join(list(map(str, cards)))
         hand_str = ker.CardNamesToIds(hand_str)[:-1]
-        query = matter_to_react + ';' + hand_str
-        result = ker.QueryLegalStrategies(query)
+        if matter_to_react is None:
+            result = ker.QueryStrategyToBegin(hand_str)
+        else:
+            query = matter_to_react + ';' + hand_str
+            result = ker.QueryLegalStrategies(query)
         status, choices = result.split(';')
         if status == "Success":
             dic = {}
@@ -97,12 +108,23 @@ class Player(PlayerBase):
         if cmd == '.draw':
             self.draw()
             self.showHand()
+        elif cmd == '.exc':
+            exc_card = cmd.split(' ')[1]
+            self.exchangeCard(exc_card)
+        elif cmd == '.pass':
+            raise Exception("pass")
         elif cmd == '.suggest':
             self.suggest(facing_matter)
         elif cmd.split(' ')[0] == '.help':
-            element_name = cmd.split(' ')[1]
-            matters = ker.ShowAllMattersHasElement(element_name)
-            print(matters)
+            if len(cmd.split(' ')) == 1:
+                # help for a matter
+                matters = ker.ShowAllCanReactWith(facing_matter)
+                print(matters)
+            else:
+                # help for an element
+                element_name = cmd.split(' ')[1]
+                matters = ker.ShowAllMattersHasElement(element_name)
+                print(matters)
 
     def suggest(self, matter):
         try:
@@ -120,7 +142,11 @@ class Player(PlayerBase):
         while True:
             try:
                 cards_to_play = input("请输入要出的牌").strip()
-                self.execCommand(cards_to_play, matter)
+                try:
+                    self.execCommand(cards_to_play, matter)
+                except Exception as e:
+                    if e.args[0] == "pass":
+                        return None
                 # check if the player has these cards
                 cards_lst = cards_to_play.split(' ')
                 cards_lst.sort()
@@ -131,8 +157,12 @@ class Player(PlayerBase):
                     raise ValueError
                 print(matter_list)
                 matter_to_play = input("请输入要出的物质").strip()
-                if matter_to_play not in matter_list:
-                    raise ValueError
+                try:
+                    idx = int(matter_to_play)
+                    matter_to_play = matter_list[idx]
+                except:
+                    if matter_to_play not in matter_list:
+                        raise ValueError
                 if matter is None:
                     # if there is no matter to react
                     self.playCard(cards_lst)
@@ -151,8 +181,12 @@ class Player(PlayerBase):
                     reaction = reaction_list[reaction_idx]
                     resultants = ut.getResultantsFromEq(reaction)
                     matter_to_obtain = input(f"请从{resultants}中选择一个生成物")
-                    if matter_to_obtain not in resultants:
-                        raise ValueError
+                    try:
+                        idx = int(matter_to_obtain)
+                        matter_to_obtain = resultants[idx]
+                    except:
+                        if matter_to_obtain not in resultants:
+                            raise ValueError
                     self.playCard(cards_lst)
                     return matter_to_obtain
                 # return
@@ -163,6 +197,29 @@ class Player(PlayerBase):
 class Robot(PlayerBase):
     def __init__(self):
         super().__init__()
+
+    def considerDrawing(self, matter) -> bool:
+        # consider if it needs to draw a card
+        sample_num = 20
+        max_draw = 8
+        scores = []
+        net_card_decrease = None
+        for i in range(sample_num):
+            current_cards = self.hand.copy()
+            for j in range(max_draw):
+                current_cards += kernel.randCard(1)
+                try:
+                    stl = self.getLegalChoices(matter, current_cards)
+                except OutOfStrategy as e:
+                    continue
+                card_consume = len(stl.longest())
+                net_card_decrease = card_consume - j - 1
+                break
+            if net_card_decrease is None:
+                net_card_decrease = -max_draw
+            scores.append(net_card_decrease)
+        ave_score = sum(scores) / sample_num
+        return ave_score > -1.5
 
     def act(self, matter):
         if matter is not None:
@@ -188,10 +245,27 @@ class Robot(PlayerBase):
                     if e.msg == "Terminal matter on the field":
                         return None
                     elif e.msg == "I need element cards" or e.msg == "I need auxiliary cards":
+                        if self.considerDrawing(matter):
+                            print("AI抽了一张牌")
+                            self.draw()
+                        else:
+                            print("AI选择了pass")
+                            return None
+        else:  # if matter is None
+            while True:
+                try:
+                    stl = self.getLegalChoices(None)
+                    strategy = stl.longest()
+                    # play card by id list
+                    card_names = ker.CardIdsToNames(strategy.card_id_list_toString()).split(',')[:-1]
+                    self.playCard(card_names)
+                    print('AI出牌：', card_names)
+                    print('AI出的物质是：', strategy.target_matter)
+                    return strategy.target_matter
+                except OutOfStrategy as e:
+                    if e.msg == "I need element cards" or e.msg == "I need auxiliary cards":
                         print("AI抽了一张牌")
                         self.draw()
-        else:
-            pass
 
 
 class Game:
@@ -207,8 +281,7 @@ class Game:
         return -1
 
     def start(self):
-        # self.current = rd.randint(0, 1)
-        self.current = 0
+        self.current = rd.randint(0, 1)
         current_player = self.players[self.current]
         for p in self.players:
             p.draw(16)
@@ -216,7 +289,7 @@ class Game:
         # game loop
         while True:
             self.current_matter = current_player.act(self.current_matter)
-            print("当前需要应对的物质：", self.current_matter)
+            print("当前场上的物质：", self.current_matter)
             self.current = (self.current + 1) % len(self.players)
             current_player = self.players[self.current]
             if self.win() != -1:
@@ -225,6 +298,10 @@ class Game:
                 print(" -- 轮到你出牌了！ --")
                 print("你的牌数：", len(self.players[0].hand))
                 print("AI的牌数：", len(self.players[1].hand))
+        if self.win() == 0:
+            print("游戏结束，玩家胜利!")
+        elif self.win() == 1:
+            print("游戏结束，AI胜利！")
 
 
 Game().start()

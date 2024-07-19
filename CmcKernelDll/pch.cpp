@@ -6,7 +6,7 @@ using namespace std;
 
 // 当使用预编译的头时，需要使用此源文件，编译才能成功。
 
-#include"strategy.h"
+#include"global.h"
 
 const char* ctypesWrapper(string f(string&), const char* input) {
 	static string input_buffer;
@@ -48,22 +48,15 @@ string _cardIdsToNames(string& ids) {
 
 string _queryLegalStrategies(string& matter_and_cardIds)
 {
-	static CardHolder ch;
 	auto sp = Split(matter_and_cardIds);
 	string matter_name = sp.next(';');
-	vector<uc> cid;
-	int id;
-	while (sp.goes()) {
-		try {
-			id = stoi(sp.next(','));
-		}
-		catch (std::invalid_argument&) {
-			throw 114518;
-		}
-		cid.push_back(id);
-	}
-	ch.updateHand(cid);
-	return ch.getStrategies(getMatterByName(matter_name)).toString();
+	kernel->hand->updateHand(parseCardIds(sp.next(';')));
+	return kernel->hand->getStrategies(kernel->getMatterByName(matter_name)).toString();
+}
+
+string _queryStrategyToBegin(string& cardIds) {
+	kernel->hand->updateHand(parseCardIds(cardIds));
+	return kernel->hand->getStrategies().toString();
 }
 
 string _queryPossibleMatters(string& cardsStr) {
@@ -73,18 +66,18 @@ string _queryPossibleMatters(string& cardsStr) {
 	{
 		cards.push_back(getCardIdByName(sp.next(' ')));
 	}
-	vector<Matter> possible_matters = getAllPossibleMatters(cards);
+	vector<Matter> possible_matters = getAllPossibleMatters(cards, kernel->table_start, kernel->table_end);
 	return to_string(possible_matters);
 }
 
 string _queryReactions(string& matter_pair) {
 	auto sp = Split(matter_pair);
-	Matter a = getMatterByName(sp.next(','));
-	Matter b = getMatterByName(sp.next(','));
+	Matter a = kernel->getMatterByName(sp.next(','));
+	Matter b = kernel->getMatterByName(sp.next(','));
 	if (a == NULL || b == NULL) {
-		throw 114517;
+		throw 114521;
 	}
-	vector<Reaction> rs = getPossibleReactions(a, b);
+	vector<Reaction> rs = kernel->getPossibleReactions(a, b);
 	return to_string(rs);
 }
 
@@ -94,10 +87,10 @@ string _queryWhichHasMinH(string& matters) {
 	Matter current_matter = NULL;
 	while (sp.goes())
 	{
-		Matter m = getMatterByName(sp.next(','));
+		Matter m = kernel->getMatterByName(sp.next(','));
 		if (m == NULL) throw 114520;
-		if (m->h < h_min) {
-			h_min = m->h; current_matter = m;
+		if (m->g(G) < h_min) {
+			h_min = m->g(G); current_matter = m;
 		}
 	}
 	return to_string(current_matter);
@@ -106,18 +99,29 @@ string _queryWhichHasMinH(string& matters) {
 string _showAllMattersHasElement(string& element) {
 	uc elem = getCardIdByName(element);
 	bits elems = (bits)1 << elem;
-	vector<Matter> ms = filterMatterShould(elems, table_start, table_end);
+	vector<Matter> ms = filterMatterShould(elems, kernel->table_start, kernel->table_end);
 	return to_string(ms);
 }
+
+string _showAllCanReactWith(string& matter) {
+	vector<Matter> ms = kernel->calculateMattersCanReactWith(kernel->getMatterByName(matter));
+	return to_string(ms);
+}
+
+string _queryScoreOfCards(string& cardIds) {
+	kernel->hand->updateHand(parseCardIds(cardIds));
+	return to_string(kernel->hand->score());
+}
+
 
 // Interfaces
 
 void Init() {
-	ReadCMCtable("CMCtable.csv");
+	kernel = new CMCKernel();
 }
 
 void GenerateCanReactMatrix() {
-	GenerateCanReactMatrix("can_react.matrix");
+	kernel->GenerateCanReactMatrix("canReact.dat");
 }
 
 const char* CardNamesToIds(char* x) {
@@ -146,4 +150,16 @@ const char* QueryWhichHasMinH(char* x) {
 
 const char* ShowAllMattersHasElement(char* x) {
 	return ctypesWrapper(_showAllMattersHasElement, x);
+}
+
+const char* ShowAllCanReactWith(char* x) {
+	return ctypesWrapper(_showAllCanReactWith, x);
+}
+
+const char* QueryStrategyToBegin(char* x) {
+	return ctypesWrapper(_queryStrategyToBegin, x);
+}
+
+const char* QueryScoreOfCards(char* x) {
+	return ctypesWrapper(_queryScoreOfCards, x);
 }
