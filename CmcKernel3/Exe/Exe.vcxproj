@@ -104,6 +104,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -118,6 +119,8 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -127,17 +130,19 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\atom.h" />
-    <ClInclude Include="..\base.h" />
-    <ClInclude Include="..\defs.h" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\base.cpp" />
     <ClCompile Include="..\cardset.cpp" />
+    <ClCompile Include="..\io.cpp" />
+    <ClCompile Include="..\ions.cpp" />
+    <ClCompile Include="..\kernel.cpp" />
+    <ClCompile Include="..\matter.cpp" />
+    <ClCompile Include="..\numerical.cpp" />
     <ClCompile Include="..\parse.cpp" />
+    <ClCompile Include="..\reaction.cpp" />
+    <ClCompile Include="..\strategy.cpp" />
     <ClCompile Include="test.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -1,22 +1,23 @@
+#include "pch.h"
 #include "base.h"
 
 template<int n>
-inline static bool byteExtract(__int64 x) {
-	return x & ((__int64)0xff << (8 * n));
+inline static uc byteExists(uc8 x) {
+	return (uc)((x & ((uc8)0xff << (8 * n))) != 0) << n;
 }
 
 template<int n>
-inline static __int64 bitExtract(char x) {
-	return (x & ((char)1 << n)) << (n * 8);
+inline static uc8 bitExtract(char x) {
+	return (uc8)(x & ((uc)1 << n)) << (n * 8);
 }
 
-inline static char summarize(__int64 x) {
+inline static uc summarize(uc8 x) {
 	return
-		byteExtract<0>(x) | byteExtract<1>(x) | byteExtract<2>(x) | byteExtract<3>(x) |
-		byteExtract<4>(x) | byteExtract<5>(x) | byteExtract<6>(x) | byteExtract<7>(x);
+		byteExists<0>(x) | byteExists<1>(x) | byteExists<2>(x) | byteExists<3>(x) |
+		byteExists<4>(x) | byteExists<5>(x) | byteExists<6>(x) | byteExists<7>(x);
 }
 
-inline static __int64 cast64(char x) {
+inline static uc8 cast64(char x) {
 	return
 		bitExtract<0>(x) | bitExtract<1>(x) | bitExtract<2>(x) | bitExtract<3>(x) |
 		bitExtract<4>(x) | bitExtract<5>(x) | bitExtract<6>(x) | bitExtract<7>(x);
@@ -41,7 +42,7 @@ __base::__base(const Elems& elems)
 	}
 }
 
-bool __base::operator==(const __base& o)
+bool __base::operator==(const __base& o) const
 {
 	uc8* p = (uc8*)data;
 	uc8* q = (uc8*)o.data;
@@ -50,12 +51,12 @@ bool __base::operator==(const __base& o)
 		p[4] == q[4] && p[5] == q[5] && p[6] == q[6] && p[7] == q[7];
 }
 
-bool __base::operator!=(const __base& o)
+bool __base::operator!=(const __base& o) const
 {
 	return !(*this == o);
 }
 
-bool __base::operator<(const __base& o)
+bool __base::operator<(const __base& o) const
 {
 	uc8* p = (uc8*)data;
 	uc8* q = (uc8*)o.data;
@@ -128,18 +129,18 @@ __base __base::operator-(const __base& o) const
 	return res;
 }
 
-Elems __base::getElements()
+Elems __base::getElements() const
 {
-	__int64 res;
+	uc8 res = 0;
 	char* res_ptr = (char*)&res;
 	uc8* ptr = (uc8*)data;
 	for (int i = 0; i < longs; i++) {
-		res_ptr[i] = summarize(*ptr);
+		res_ptr[i] = summarize(ptr[i]);
 	}
 	return res;
 }
 
-json __base::toJson()
+json __base::toJson() const
 {
 	json js;
 	for (int i = 0; i < basic_num_chars; i++) {
@@ -150,7 +151,7 @@ json __base::toJson()
 	return js;
 }
 
-string __base::toString()
+string __base::toString() const
 {
 	return toJson().dump();
 }
@@ -179,9 +180,9 @@ __base __base::unityPart() const
 	the number of elements in __base should be less than 8
 	require: `indices` is empty
 */
-__int64 __base::compress(vector<uc>& indices)
+uc8 __base::compress(vector<uc>& indices)
 {
-	__int64 res = 0;
+	uc8 res = 0;
 	uc* ptr = (uc*)&res;
 	int cnt = 0;
 	indices.reserve(8);
@@ -194,3 +195,43 @@ __int64 __base::compress(vector<uc>& indices)
 	return res;
 }
 
+uc __base::count() const
+{
+	uc cnt = 0;
+	for (int i = 0; i < basic_num_chars; i++) {
+		cnt += data[i];
+	}
+	return cnt;
+}
+
+string to_string(const __base& b)
+{
+	return b.toString();
+}
+
+vector<uc> to_vector(Elems elems) {
+	vector<uc> res; res.reserve(8);
+	uc cnt = 0;
+	while (elems = elems >> 1) {
+		cnt++;
+		if (elems & 1)res.push_back(cnt);
+	}
+	return res;
+}
+
+__base from_vector(const vector<vector<uc>>& vec)
+{
+	__base res;
+	for (auto& x : vec) {
+		res.data[x[0]] = x[1];
+	}
+	return res;
+}
+
+__base from_cardIds(const vector<int>& vec) {
+	__base res;
+	for (auto cardId : vec) {
+		res.data[cardId]++;
+	}
+	return res;
+}

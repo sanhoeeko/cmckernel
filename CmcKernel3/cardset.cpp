@@ -1,4 +1,6 @@
+#include "pch.h"
 #include "cardset.h"
+#include "itertools.h"
 
 template<typename t>
 inline static void unique_inplace(vector<t>& v) {
@@ -49,7 +51,7 @@ inline static bool gt(uc8 a, uc8 b) {
         bytegt<4>(a, b) || bytegt<5>(a, b) || bytegt<6>(a, b) || bytegt<7>(a, b);
 }
 
-inline static uc count(uc8 x) {
+uc count(uc8 x) {
     return 
           byteExtract<0>(x) + byteExtract<1>(x) + byteExtract<2>(x) + byteExtract<3>(x)
         + byteExtract<4>(x) + byteExtract<5>(x) + byteExtract<6>(x) + byteExtract<7>(x);
@@ -60,10 +62,9 @@ typedef struct CardSetSolution {
     CardSet set;
     uc8 compressed_formula, compressed_set;
 
-    bool operator==(const CardSetSolution& o) {
+    bool operator==(const CardSetSolution& o) const {
         return set == o.set && compressed_formula == o.compressed_formula && compressed_set == o.compressed_set;
     }
-
     CardSet decompress(vector<uc>& indices) {
         uc* ptr = (uc*)&compressed_set;
         for (int i = 0; i < indices.size(); i++) {
@@ -72,6 +73,24 @@ typedef struct CardSetSolution {
         return set;
     }
 } CSS;
+
+struct CSSHasher {
+    std::size_t operator()(const CSS& k) const {
+        std::size_t hash = 0;
+        std::hash<unsigned __int64> hash_func;
+
+        // Hash the __base set
+        for (int i = 0; i < 64; ++i) {
+            hash ^= std::hash<unsigned char>{}(k.set.data[i]) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+        }
+
+        // Hash the compressed_formula and compressed_set
+        hash ^= hash_func(k.compressed_formula) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+        hash ^= hash_func(k.compressed_set) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+
+        return hash;
+    }
+};
 
 inline static uc8 true_div(uc8 x, uc a) {
     uc8 res = 0;
@@ -83,8 +102,9 @@ inline static uc8 true_div(uc8 x, uc a) {
     return res;
 }
 
-inline static vector<uc8> subsets(uc8 x) {
-    vector<uc8> dst; dst.reserve(64);
+inline static void subsets(uc8 x, vector<uc8>& dst) {
+    // avoid to return a vector, because it causes memory reallocations
+    dst.clear();
     for (uc8 i0 = 0; i0 <= byteExtract<0>(x); i0++) {
         for (uc8 i1 = 0; i1 <= byteExtract<1>(x); i1++) {
             for (uc8 i2 = 0; i2 <= byteExtract<2>(x); i2++) {
@@ -102,7 +122,6 @@ inline static vector<uc8> subsets(uc8 x) {
             }
         }
     }
-    return dst;
 }
 
 struct CanonicalSplitter {
@@ -115,11 +134,11 @@ struct CanonicalSplitter {
         src = x;
         subset_idx = 1;     // the zeroth subset is 0x00
         factor = 2;
-        current_subsets = subsets(true_div(src, factor));
+        subsets(true_div(src, factor), current_subsets);
     }
     bool updateSubsets() {
         while (factor <= 4) {
-            current_subsets = subsets(true_div(src, factor));
+            subsets(true_div(src, factor), current_subsets);
             factor++;
             subset_idx = 1;
             if (!current_subsets.empty()) {
@@ -139,22 +158,14 @@ struct CanonicalSplitter {
     }
 };
 
-template<typename t>
-bool in(t& x, vector<t>& v) {
-    for (auto& y : v) {
-        if (x == y)return true;
-    }
-    return false;
-}
-
-void unique_join(vector<CSS>& a, vector<CSS>& b) {
+inline static void unique_join(vector<CSS>& a, vector<CSS>& b) {
     a.reserve(a.size() + b.size());
     for (auto& x : b) {
         if (!in(x, a))a.push_back(x);
     }
 }
 
-vector<CSS> direct_product(const vector<CSS>& a, const vector<CSS>& b) {
+inline static vector<CSS> direct_product(const vector<CSS>& a, const vector<CSS>& b) {
     vector<CSS> c; c.reserve(a.size() * b.size());
     for (auto& x : a) {
         for (auto& y : b) {
@@ -163,27 +174,41 @@ vector<CSS> direct_product(const vector<CSS>& a, const vector<CSS>& b) {
                 x.compressed_formula + y.compressed_formula, 
                 x.compressed_set +  y.compressed_set
             };
-            if (!in(z, c))c.push_back(z);
+            c.push_back(z);     // the resultant vector may has duplicates
         }
     }
     return c;
 }
 
+
+std::unordered_map<CSS, vector<CSS>, CSSHasher> css_cache;
+
 vector<CSS> possibleCardSets_inner(const CSS& question) {
 
+    // Check if the result is in the cache
+    auto it = css_cache.find(question);
+    if (it != css_cache.end()) {
+        return it->second;
+    }
+
     // the end of recursion
-    if (question.compressed_formula == 0)return { question };
+    if (question.compressed_formula == 0) {
+        css_cache[question] = { question };
+        return { question };
+    };
 
     // elements that have a single atom lead to only one branch
     uc8 unity_element_cards = unityPart(question.compressed_formula);
     if (unity_element_cards != 0) {
-        return possibleCardSets_inner(
+        auto result = possibleCardSets_inner(
             { 
                 question.set,
                 question.compressed_formula - unity_element_cards,
                 question.compressed_set + unity_element_cards
             }
         );
+        css_cache[question] = result;
+        return result;
     }
     
     // formula that has a factor can lead to other branches
@@ -231,6 +256,7 @@ vector<CSS> possibleCardSets_inner(const CSS& question) {
         unique_join(lst, alst);
     }
 
+    css_cache[question] = lst;
     return lst;
 }
 

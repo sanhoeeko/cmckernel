@@ -46,7 +46,7 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -120,6 +120,10 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <OpenMPSupport>true</OpenMPSupport>
+      <PrecompiledHeader>Create</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <ShowIncludes>false</ShowIncludes>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -133,18 +137,31 @@
     <ClInclude Include="base.h" />
     <ClInclude Include="cardset.h" />
     <ClInclude Include="defs.h" />
-    <ClInclude Include="io.h" />
-    <ClInclude Include="ions.h" />
+    <ClInclude Include="framework.h" />
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="result.h" />
+    <ClInclude Include="utils.h" />
+    <ClInclude Include="itertools.h" />
+    <ClInclude Include="kernel.h" />
     <ClInclude Include="matter.h" />
-    <ClInclude Include="numerical.h" />
     <ClInclude Include="parse.h" />
     <ClInclude Include="reaction.h" />
+    <ClInclude Include="strategy.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="base.cpp" />
     <ClCompile Include="cardset.cpp" />
+    <ClCompile Include="dllmain.cpp" />
+    <ClCompile Include="io.cpp" />
+    <ClCompile Include="ions.cpp" />
+    <ClCompile Include="kernel.cpp" />
     <ClCompile Include="matter.cpp" />
+    <ClCompile Include="numerical.cpp" />
     <ClCompile Include="parse.cpp" />
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="reaction.cpp" />
+    <ClCompile Include="result.cpp" />
+    <ClCompile Include="strategy.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -15,17 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\atom.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="..\base.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="..\defs.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
@@ -39,6 +28,27 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="..\cardset.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\matter.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\kernel.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\reaction.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\io.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\numerical.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ions.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\strategy.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

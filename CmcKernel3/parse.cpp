@@ -1,33 +1,26 @@
+#include "pch.h"
 #include "parse.h"
 
-#define ILLEGAL_NAME_CASE 114514
-#define ILLEGAL_ELEMENT_CASE 114515
+Split::Split(const string& str) {
+	ptr = str.c_str();
+	ptrnxt = ptr;
+	buffer = new char[str.length()];
+}
 
-class Split {
-public:
-	const char* ptr;
-	const char* ptrnxt;
-	char* buffer;
+string Split::next(char delimiter) {
+	while (*ptrnxt != '\0' && *ptrnxt++ != delimiter) {
+		;
+	}
+	int len = *ptrnxt == '\0' ? ptrnxt - ptr : ptrnxt - ptr - 1;
+	memcpy(buffer, ptr, len * sizeof(char));
+	buffer[len] = '\0';
+	ptr = ptrnxt;
+	return string(buffer);
+}
 
-	Split(const string& str) {
-		ptr = str.c_str();
-		ptrnxt = ptr;
-		buffer = new char[str.length()];
-	}
-	string next(char delimiter) {
-		while (*ptrnxt != '\0' && *ptrnxt++ != delimiter) {
-			;
-		}
-		int len = *ptrnxt == '\0' ? ptrnxt - ptr : ptrnxt - ptr - 1;
-		memcpy(buffer, ptr, len * sizeof(char));
-		buffer[len] = '\0';
-		ptr = ptrnxt;
-		return string(buffer);
-	}
-	bool goes() {
-		return *ptr != '\0';
-	}
-};
+bool Split::goes() {
+	return *ptr != '\0';
+}
 
 enum class CharType {
 	Uppercase, Lowercase, Number, Lbracket, Rbracket, Illegal

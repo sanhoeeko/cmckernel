@@ -33,16 +33,28 @@
     <ClInclude Include="reaction.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="ions.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="numerical.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="cardset.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="io.h">
+    <ClInclude Include="utils.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="kernel.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="itertools.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="strategy.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="framework.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="pch.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="result.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
@@ -57,6 +69,33 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="cardset.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="kernel.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="reaction.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="io.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="strategy.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="dllmain.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="pch.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="result.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="ions.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="numerical.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
